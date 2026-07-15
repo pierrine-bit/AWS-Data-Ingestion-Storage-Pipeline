@@ -11,12 +11,14 @@ resource "aws_iam_role" "github_actions" {
           Federated = data.aws_iam_openid_connect_provider.github.arn
         }
         Action = ["sts:AssumeRoleWithWebIdentity", "sts:TagSession"]
+        # Matched on the "repository" claim rather than "sub" — GitHub now embeds
+        # numeric owner/repo IDs into sub (e.g. "repo:org@123/repo@456:ref:..."),
+        # which breaks simple "repo:org/repo:*" StringLike matching. "repository"
+        # stays a clean "org/repo" string regardless.
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:*"
+            "token.actions.githubusercontent.com:aud"        = "sts.amazonaws.com"
+            "token.actions.githubusercontent.com:repository" = "${var.github_org}/${var.github_repo}"
           }
         }
       }
