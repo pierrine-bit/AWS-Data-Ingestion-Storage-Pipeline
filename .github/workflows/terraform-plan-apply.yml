@@ -53,14 +53,14 @@ jobs:
         with:
           terraform_version: ${{ inputs.tf_version }}
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -input=false
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
         continue-on-error: true
       - name: Terraform Validate
         run: terraform validate
       - name: Terraform Plan
-        run: terraform plan -no-color 2>&1 | tee /tmp/plan_output.txt
+        run: terraform plan -input=false -no-color 2>&1 | tee /tmp/plan_output.txt
       - name: Post Plan as PR Comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -88,7 +88,7 @@ jobs:
             });
       - name: Terraform Apply
         if: inputs.run_apply == 'true'
-        run: terraform apply -auto-approve
+        run: terraform apply -input=false -auto-approve
       - name: Terraform Output
         if: success()
         run: terraform output
