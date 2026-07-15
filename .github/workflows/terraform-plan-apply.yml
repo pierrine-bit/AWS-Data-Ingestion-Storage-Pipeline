@@ -1,0 +1,86 @@
+name: "Terraform Plan & Apply (Reusable)"
+on:
+  workflow_call:
+    inputs:
+      working_dir:
+        description: "Terraform working directory relative to repo root"
+        required: true
+        type: string
+      tf_version:
+        description: "Terraform CLI version"
+        required: false
+        type: string
+        default: "1.9.8"
+      run_apply:
+        description: "Set to 'true' to run terraform apply after plan"
+        required: false
+        type: string
+        default: "false"
+    secrets:
+      AWS_OIDC_ROLE_ARN:
+        required: true
+
+jobs:
+  terraform:
+    name: "Plan & Apply"
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_dir }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: github-actions-terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.tf_version }}
+      - name: Terraform Init
+        run: terraform init
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+      - name: Terraform Validate
+        run: terraform validate
+      - name: Terraform Plan
+        run: terraform plan -no-color 2>&1 | tee /tmp/plan_output.txt
+      - name: Post Plan as PR Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('/tmp/plan_output.txt', 'utf8');
+            const truncated = plan.length > 65000
+              ? plan.substring(0, 65000) + '\n\n... output truncated'
+              : plan;
+            const body = [
+              `## Terraform Plan — \`${{ inputs.working_dir }}\``,
+              '<details><summary>Show Plan Output</summary>',
+              '',
+              '```hcl',
+              truncated,
+              '```',
+              '</details>'
+            ].join('\n');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+      - name: Terraform Apply
+        if: inputs.run_apply == 'true'
+        run: terraform apply -auto-approve
+      - name: Terraform Output
+        if: success()
+        run: terraform output
