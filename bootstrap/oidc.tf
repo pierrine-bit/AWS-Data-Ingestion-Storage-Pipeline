@@ -10,7 +10,7 @@ resource "aws_iam_role" "github_actions" {
         Principal = {
           Federated = data.aws_iam_openid_connect_provider.github.arn
         }
-        Action = "sts:AssumeRoleWithWebIdentity"
+        Action = ["sts:AssumeRoleWithWebIdentity", "sts:TagSession"]
         Condition = {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
@@ -109,6 +109,18 @@ resource "aws_iam_role_policy" "github_actions" {
           "cloudtrail:RemoveTags"
         ]
         Resource = "*"
+      },
+      {
+        # lab-2.1-s3 looks these up (via data "aws_iam_role") to build its bucket
+        # policy's allowed-principals list — they're created by CDEM01's Lab 1.1.
+        Sid    = "IAMRoleLookupLab21"
+        Effect = "Allow"
+        Action = ["iam:GetRole"]
+        Resource = [
+          "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/DataEngineerRole",
+          "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/GlueServiceRole",
+          "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/RedshiftIAMRole"
+        ]
       }
     ]
   })
