@@ -100,7 +100,9 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:ListBucket",
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:PutObjectTagging",
+          "s3:GetObjectTagging"
         ]
         Resource = [
           "arn:${data.aws_partition.current.partition}:s3:::${var.data_lake_bucket_prefix}-*",
