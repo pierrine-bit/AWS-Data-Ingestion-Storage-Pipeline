@@ -84,6 +84,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetLifecycleConfiguration",
           "s3:PutBucketLogging",
           "s3:GetBucketLogging",
+          "s3:PutBucketCORS",
+          "s3:GetBucketCORS",
           "s3:GetBucketLocation",
           "s3:ListBucket",
           "s3:GetObject",
@@ -108,6 +110,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "glue:GetTable",
           "glue:GetTables",
           "glue:UpdateTable",
+          "glue:GetTags",
           "glue:TagResource",
           "glue:UntagResource"
         ]
