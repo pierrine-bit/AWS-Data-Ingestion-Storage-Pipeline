@@ -14,11 +14,9 @@ on:
           - destroy-all
 
 jobs:
-  plan_apply:
-    if: |
-      github.event_name != 'workflow_dispatch' ||
-      github.event.inputs.action == 'plan' ||
-      github.event.inputs.action == 'apply'
+  plan:
+    name: "Terraform Plan"
+    if: ${{ github.event.inputs.action == 'plan' }}
     permissions:
       id-token: write
       contents: read
@@ -26,17 +24,27 @@ jobs:
     uses: ./.github/workflows/terraform-plan-apply.yml
     with:
       working_dir: "lab-2.3-kinesis"
-      run_apply: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' && 'true' || 'false' }}
+      run_apply: false
+    secrets:
+      AWS_OIDC_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+
+  apply:
+    name: "Terraform Apply"
+    if: ${{ github.event.inputs.action == 'apply' }}
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/terraform-plan-apply.yml
+    with:
+      working_dir: "lab-2.3-kinesis"
+      run_apply: true
     secrets:
       AWS_OIDC_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE_ARN }}
 
   destroy:
     name: "Terraform Destroy"
-    if: |
-      github.event_name == 'workflow_dispatch' && (
-        github.event.inputs.action == 'destroy-stream-only' ||
-        github.event.inputs.action == 'destroy-all'
-      )
+    if: ${{ github.event.inputs.action == 'destroy-stream-only' || github.event.inputs.action == 'destroy-all' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -51,7 +59,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: us-east-1
+          aws-region: eu-west-1
+          role-session-name: github-actions-terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:

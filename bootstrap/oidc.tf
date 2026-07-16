@@ -45,6 +45,21 @@ resource "aws_iam_role_policy" "github_actions" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "StateBackend"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketVersioning"
+        ]
+        Resource = [
+          "arn:${data.aws_partition.current.partition}:s3:::cdem01-tfstate",
+          "arn:${data.aws_partition.current.partition}:s3:::cdem01-tfstate/*"
+        ]
+      },
+      {
         Sid    = "S3DataLakeLab21"
         Effect = "Allow"
         Action = [

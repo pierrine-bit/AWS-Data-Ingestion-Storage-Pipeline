@@ -12,10 +12,10 @@ on:
         type: string
         default: "1.9.8"
       run_apply:
-        description: "Set to 'true' to run terraform apply after plan"
+        description: "Set to true to run terraform apply after plan"
         required: false
-        type: string
-        default: "false"
+        type: boolean
+        default: false
     secrets:
       AWS_OIDC_ROLE_ARN:
         required: true
@@ -34,19 +34,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: TEMP DEBUG - decode OIDC token claims
-        run: |
-          IDTOKEN=$(curl -sSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
-          PAYLOAD=$(echo "$IDTOKEN" | cut -d '.' -f2 | tr '_-' '/+')
-          MOD=$(( ${#PAYLOAD} % 4 ))
-          if [ "$MOD" -eq 2 ]; then PAYLOAD="${PAYLOAD}=="; fi
-          if [ "$MOD" -eq 3 ]; then PAYLOAD="${PAYLOAD}="; fi
-          echo "$PAYLOAD" | base64 -d | jq .
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: us-east-1
+          aws-region: eu-west-1
           role-session-name: github-actions-terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -87,7 +79,7 @@ jobs:
               body
             });
       - name: Terraform Apply
-        if: inputs.run_apply == 'true'
+        if: ${{ inputs.run_apply }}
         run: terraform apply -input=false -auto-approve
       - name: Terraform Output
         if: success()
