@@ -14,6 +14,8 @@ locals {
 }
 
 resource "aws_kinesis_stream" "user_events" {
+  provider = aws.no_default_tags
+
   name             = "user-events-stream"
   shard_count      = var.shard_count
   retention_period = 24
@@ -29,8 +31,6 @@ resource "aws_kinesis_stream" "user_events" {
   ]
 
   stream_mode_details { stream_mode = "PROVISIONED" }
-
-  tags = { Name = "user-events-stream" }
 }
 
 # ---------------------------------------------------------------------------
