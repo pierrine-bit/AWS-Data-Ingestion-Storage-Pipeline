@@ -27,15 +27,12 @@ locals {
 
 # Main data lake bucket
 resource "aws_s3_bucket" "data_lake" {
-  bucket = local.bucket_name
+  bucket        = local.bucket_name
+  force_destroy = true
   # DataLakeRole distinguishes this bucket from the logs bucket for other labs'
   # tag-based lookups (aws_resourcegroupstaggingapi_resources) — lets Lab 2.2/2.3
   # find this bucket without needing to know or reconstruct its naming convention.
   tags = { Name = local.bucket_name, DataLakeRole = "primary" }
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_s3_bucket_public_access_block" "data_lake" {
@@ -121,8 +118,9 @@ resource "aws_s3_bucket_policy" "data_lake" {
 
 # Logs bucket
 resource "aws_s3_bucket" "logs" {
-  bucket = local.logs_bucket
-  tags   = { Name = local.logs_bucket }
+  bucket        = local.logs_bucket
+  force_destroy = true
+  tags          = { Name = local.logs_bucket }
 }
 
 resource "aws_s3_bucket_public_access_block" "logs" {
