@@ -39,6 +39,12 @@ variable "cost_center" {
   default     = "Analytics"
 }
 
+variable "create_kinesis_stream" {
+  type        = bool
+  description = "Whether to create the Kinesis stream (and its dependent Firehose delivery stream). Disabled by default because this account's AWS Organizations SCP explicitly denies kinesis:CreateStream — enable only in an account without that restriction."
+  default     = false
+}
+
 variable "shard_count" {
   type        = number
   description = "Number of provisioned Kinesis shards (each shard supports 1,000 records/sec or 1 MB/sec write throughput)"

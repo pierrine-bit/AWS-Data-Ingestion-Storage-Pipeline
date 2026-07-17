@@ -9,14 +9,18 @@ data "aws_resourcegroupstaggingapi_resources" "data_lake_bucket" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 locals {
   data_lake_bucket_arn = data.aws_resourcegroupstaggingapi_resources.data_lake_bucket.resource_tag_mapping_list[0].resource_arn
+  kinesis_stream_name  = "user-events-stream"
+  kinesis_stream_arn   = "arn:aws:kinesis:${var.aws_region}:${data.aws_caller_identity.current.account_id}:stream/${local.kinesis_stream_name}"
 }
 
 resource "aws_kinesis_stream" "user_events" {
-  provider = aws.no_default_tags
+  count = var.create_kinesis_stream ? 1 : 0
 
-  name             = "user-events-stream"
+  name             = local.kinesis_stream_name
   shard_count      = var.shard_count
   retention_period = 24
 
@@ -31,6 +35,8 @@ resource "aws_kinesis_stream" "user_events" {
   ]
 
   stream_mode_details { stream_mode = "PROVISIONED" }
+
+  tags = { Name = local.kinesis_stream_name }
 }
 
 # ---------------------------------------------------------------------------
@@ -84,7 +90,7 @@ resource "aws_iam_role_policy" "firehose" {
           "kinesis:DescribeStream",
           "kinesis:ListShards"
         ]
-        Resource = aws_kinesis_stream.user_events.arn
+        Resource = local.kinesis_stream_arn
       }
     ]
   })
@@ -101,11 +107,13 @@ resource "aws_cloudwatch_log_stream" "firehose_s3" {
 }
 
 resource "aws_kinesis_firehose_delivery_stream" "to_s3" {
+  count = var.create_kinesis_stream ? 1 : 0
+
   name        = "user-events-to-s3"
   destination = "extended_s3"
 
   kinesis_source_configuration {
-    kinesis_stream_arn = aws_kinesis_stream.user_events.arn
+    kinesis_stream_arn = aws_kinesis_stream.user_events[0].arn
     role_arn           = aws_iam_role.firehose.arn
   }
 
@@ -142,7 +150,7 @@ resource "aws_cloudwatch_dashboard" "kinesis_monitoring" {
         width  = 12
         height = 6
         properties = {
-          metrics = [["AWS/Kinesis", "IncomingRecords", "StreamName", aws_kinesis_stream.user_events.name]]
+          metrics = [["AWS/Kinesis", "IncomingRecords", "StreamName", local.kinesis_stream_name]]
           period  = 60
           stat    = "Sum"
           region  = var.aws_region
@@ -156,7 +164,7 @@ resource "aws_cloudwatch_dashboard" "kinesis_monitoring" {
         width  = 12
         height = 6
         properties = {
-          metrics = [["AWS/Kinesis", "IncomingBytes", "StreamName", aws_kinesis_stream.user_events.name]]
+          metrics = [["AWS/Kinesis", "IncomingBytes", "StreamName", local.kinesis_stream_name]]
           period  = 60
           stat    = "Sum"
           region  = var.aws_region
@@ -170,12 +178,18 @@ resource "aws_cloudwatch_dashboard" "kinesis_monitoring" {
         width  = 12
         height = 6
         properties = {
-          metrics = [["AWS/Kinesis", "IteratorAgeMilliseconds", "StreamName", aws_kinesis_stream.user_events.name]]
+          metrics = [["AWS/Kinesis", "IteratorAgeMilliseconds", "StreamName", local.kinesis_stream_name]]
           period  = 60
           stat    = "Average"
           region  = var.aws_region
           title   = "Kinesis Iterator Age"
           view    = "gauge"
+          yAxis = {
+            left = {
+              min = 0
+              max = 300000
+            }
+          }
         }
       }
     ]
