@@ -158,6 +158,168 @@ resource "aws_iam_role_policy" "github_actions" {
           "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/GlueServiceRole",
           "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/RedshiftIAMRole"
         ]
+      },
+      {
+        # lab-2.2-datasync looks up Lab 1.2's private subnet/security group by tag,
+        # Lab 2.1's data lake bucket via the tagging API, and the latest Amazon
+        # Linux 2 AMI for the on-prem simulator EC2 instance.
+        Sid    = "ReadOnlyLookupsLab22"
+        Effect = "Allow"
+        Action = [
+          "tag:GetResources",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeImages",
+          "ec2:DescribeInstances",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeInstanceAttribute",
+          "ec2:DescribeTags"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "PassDataEngineerRoleLab22"
+        Effect = "Allow"
+        Action = ["iam:PassRole"]
+        Resource = "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/DataEngineerRole"
+      },
+      {
+        Sid    = "IAMManageLab22"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy",
+          "iam:CreateInstanceProfile",
+          "iam:DeleteInstanceProfile",
+          "iam:GetInstanceProfile",
+          "iam:AddRoleToInstanceProfile",
+          "iam:RemoveRoleFromInstanceProfile",
+          "iam:TagInstanceProfile",
+          "iam:UntagInstanceProfile"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "EC2SimulatorLab22"
+        Effect = "Allow"
+        Action = [
+          "ec2:RunInstances",
+          "ec2:TerminateInstances",
+          "ec2:ModifyInstanceAttribute",
+          "ec2:CreateTags"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DataSyncLab22"
+        Effect = "Allow"
+        Action = [
+          "datasync:CreateLocationS3",
+          "datasync:DeleteLocation",
+          "datasync:DescribeLocationS3",
+          "datasync:CreateTask",
+          "datasync:DeleteTask",
+          "datasync:DescribeTask",
+          "datasync:UpdateTask",
+          "datasync:TagResource",
+          "datasync:UntagResource",
+          "datasync:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "LogsLab22"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:CreateLogStream",
+          "logs:DeleteLogStream",
+          "logs:DescribeLogStreams",
+          "logs:PutRetentionPolicy",
+          "logs:TagLogGroup",
+          "logs:TagResource",
+          "logs:UntagResource",
+          "logs:ListTagsForResource",
+          "logs:ListTagsLogGroup",
+          "logs:PutResourcePolicy",
+          "logs:DescribeResourcePolicies",
+          "logs:DeleteResourcePolicy"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "SNSLab22"
+        Effect = "Allow"
+        Action = [
+          "sns:CreateTopic",
+          "sns:DeleteTopic",
+          "sns:GetTopicAttributes",
+          "sns:SetTopicAttributes",
+          "sns:TagResource",
+          "sns:UntagResource",
+          "sns:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "CloudWatchAlarmLab22"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:TagResource",
+          "cloudwatch:UntagResource",
+          "cloudwatch:ListTagsForResource",
+          "cloudwatch:PutDashboard",
+          "cloudwatch:DeleteDashboards",
+          "cloudwatch:GetDashboard",
+          "cloudwatch:ListDashboards"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "KinesisLab23"
+        Effect = "Allow"
+        Action = [
+          "kinesis:CreateStream",
+          "kinesis:DeleteStream",
+          "kinesis:DescribeStreamSummary",
+          "kinesis:DescribeStream",
+          "kinesis:EnableEnhancedMonitoring",
+          "kinesis:DisableEnhancedMonitoring",
+          "kinesis:IncreaseStreamRetentionPeriod",
+          "kinesis:DecreaseStreamRetentionPeriod",
+          "kinesis:AddTagsToStream",
+          "kinesis:RemoveTagsFromStream",
+          "kinesis:ListTagsForStream"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "FirehoseLab23"
+        Effect = "Allow"
+        Action = [
+          "firehose:CreateDeliveryStream",
+          "firehose:DeleteDeliveryStream",
+          "firehose:DescribeDeliveryStream",
+          "firehose:UpdateDestination",
+          "firehose:TagDeliveryStream",
+          "firehose:UntagDeliveryStream",
+          "firehose:ListTagsForDeliveryStream"
+        ]
+        Resource = "*"
       }
     ]
   })
