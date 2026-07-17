@@ -36,8 +36,9 @@ data "aws_iam_role" "data_engineer" {
 }
 
 resource "aws_iam_instance_profile" "onprem_simulator" {
-  name = "onprem-simulator-profile"
-  role = data.aws_iam_role.data_engineer.name
+  count = var.create_onprem_simulator ? 1 : 0
+  name  = "onprem-simulator-profile"
+  role  = data.aws_iam_role.data_engineer.name
 }
 
 # ---------------------------------------------------------------------------
@@ -78,11 +79,12 @@ data "aws_ami" "amazon_linux_2" {
 }
 
 resource "aws_instance" "onprem_simulator" {
+  count                  = var.create_onprem_simulator ? 1 : 0
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t2.micro"
   subnet_id              = data.aws_subnet.private_1b.id
   vpc_security_group_ids = [data.aws_security_group.private_compute.id]
-  iam_instance_profile   = aws_iam_instance_profile.onprem_simulator.name
+  iam_instance_profile   = aws_iam_instance_profile.onprem_simulator[0].name
 
   user_data = <<-EOF
     #!/bin/bash

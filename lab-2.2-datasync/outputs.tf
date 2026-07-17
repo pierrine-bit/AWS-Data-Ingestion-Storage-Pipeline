@@ -1,6 +1,6 @@
 output "instance_id" {
-  value       = aws_instance.onprem_simulator.id
-  description = "EC2 instance ID of the on-premises data simulator — private subnet, connect via SSM: aws ssm start-session --target <id>"
+  value       = one(aws_instance.onprem_simulator[*].id)
+  description = "EC2 instance ID of the on-premises data simulator — private subnet, connect via SSM: aws ssm start-session --target <id>. Null when create_onprem_simulator is false."
 }
 
 output "task_arn" {

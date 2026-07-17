@@ -39,6 +39,12 @@ variable "cost_center" {
   default     = "Analytics"
 }
 
+variable "create_onprem_simulator" {
+  type        = bool
+  description = "Whether to create the on-prem simulator EC2 instance. Disabled by default because this account's AWS Organizations SCP explicitly denies ec2:RunInstances — enable only in an account without that restriction."
+  default     = false
+}
+
 variable "datasync_schedule" {
   type        = string
   description = "Cron expression for the DataSync transfer schedule (UTC)"

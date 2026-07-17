@@ -11,16 +11,13 @@ resource "aws_iam_role" "github_actions" {
           Federated = data.aws_iam_openid_connect_provider.github.arn
         }
         Action = ["sts:AssumeRoleWithWebIdentity", "sts:TagSession"]
-        # AWS requires this trust policy to be scoped via "sub" or "job_workflow_ref"
-        # (rejects anything it considers unscoped) — plain "repository" matching
-        # alone isn't accepted. GitHub also now embeds numeric owner/repo IDs into
-        # sub (e.g. "repo:org@123/repo@456:ref:..."), so the old literal
-        # "repo:org/repo:*" pattern never matched; wildcarding around the IDs here
-        # fixes that. "repository" is kept alongside as a clean, ID-free check.
+        # AWS requires this trust policy to be scoped via "sub" or "job_workflow_ref".
+        # GitHub now embeds numeric owner/repo IDs into sub (e.g.
+        # "repo:org@123/repo@456:ref:..."), so the old literal "repo:org/repo:*"
+        # pattern never matched; wildcarding around the IDs here fixes that.
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud"        = "sts.amazonaws.com"
-            "token.actions.githubusercontent.com:repository" = "${var.github_org}/${var.github_repo}"
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
             "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}@*/${var.github_repo}@*:*"
@@ -198,6 +195,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy",
           "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
           "iam:CreateInstanceProfile",
           "iam:DeleteInstanceProfile",
           "iam:GetInstanceProfile",

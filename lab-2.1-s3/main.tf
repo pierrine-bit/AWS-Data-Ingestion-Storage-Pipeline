@@ -83,12 +83,14 @@ resource "aws_s3_bucket_policy" "data_lake" {
         Principal = "*"
         Action    = "s3:PutObject"
         Resource  = "arn:aws:s3:::${local.bucket_name}/*"
-        # StringNotEqualsIfExists: only denies when the caller explicitly sets
-        # an SSE algorithm other than AES256.  Requests with no SSE header
+        # Plain StringNotEquals (not the IfExists variant): a missing header
+        # evaluates the condition as false, so requests with no SSE header
         # (AWS services, aws s3 cp) fall through to the bucket's default
-        # AES256 encryption instead of being denied.
+        # AES256 encryption instead of being denied. IfExists would invert
+        # this — a missing header would evaluate to true and deny the
+        # request, which is what broke AWS DataSync's bucket-access check.
         Condition = {
-          StringNotEqualsIfExists = { "s3:x-amz-server-side-encryption" = "AES256" }
+          StringNotEquals = { "s3:x-amz-server-side-encryption" = "AES256" }
         }
       },
       # Explicit allow-list for audit visibility — access is already governed by
